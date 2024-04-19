@@ -7,4 +7,3 @@ find_package(CUDAToolkit REQUIRED)
 add_executable(${ProjectId} ${ProjectId}.cu) # Change the file extension to .cu
 target_link_libraries(${ProjectId} PRIVATE CUDA::cudart)
 message("Project id: ${ProjectId}")
-set_target_properties(${ProjectId} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)

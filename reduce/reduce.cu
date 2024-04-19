@@ -9,42 +9,38 @@ namespace cg = cooperative_groups;
 
 //reduction use kernel,warps not active, inefficient.
 __global__ void reduce0(int* g_idata,int n, int* g_odata) {
-    // cg::thread_block cta = cg::this_thread_block();
+    cg::thread_block cta = cg::this_thread_block();
     extern __shared__ int sdata[];
     // each thread loads one element from global to shared mem
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     sdata[tid] = i< n ? g_idata[i] : 0;
-    // cg::sync(cta);
-    __syncthreads();// cg better than __syncthreads().
+    cg::sync(cta);
     // do reduction in shared mem
     for (unsigned int s = 1; s < blockDim.x; s *= 2) {
         if (tid % (2 * s) == 0) {
             sdata[tid] += sdata[tid + s];
         }
-        // cg::sync(cta);
-        __syncthreads();//namespace cg = cooperative_groups;;
+        cg::sync(cta);
     }
     // write result for this block to global mem
     if (tid == 0) g_odata[blockIdx.x] = sdata[0];
 }
 // replace % with * to improve the efficiency, avoid bank conflict.
 __global__ void reduce1(int* g_idata, int n, int* g_odata) {
-    // cg::thread_block cta = cg::this_thread_block();
+    cg::thread_block cta = cg::this_thread_block();
     extern __shared__ int sdata[];
     // each thread loads one element from global to shared mem
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     sdata[tid] = i < n ? g_idata[i] : 0;
-    // cg::sync(cta);
-    __syncthreads(); //cg better than __syncthreads().
+    cg::sync(cta);
     // do reduction in shared mem
     for (unsigned int s = blockDim.x/2; s >0; s >>=1) {
         if (tid < s) {
             sdata[tid] += sdata[tid + s];
         }
-        // cg::sync(cta);
-        __syncthreads();
+        cg::sync(cta);
     }
     // write result for this block to global mem
     if (tid == 0) g_odata[blockIdx.x] = sdata[0];
@@ -61,21 +57,19 @@ __device__ void warpReduce(volatile int* sdata, int tid) {
     sdata[tid] += sdata[tid + 1];
 }
 __global__ void reduce2(int* g_idata, int n, int* g_odata) {
-    // cg::thread_block cta = cg::this_thread_block();
+    cg::thread_block cta = cg::this_thread_block();
     extern __shared__ int sdata[];
     // each thread loads one element from global to shared mem
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     sdata[tid] = i < n ? g_idata[i] : 0;
-    // cg::sync(cta);
-    __syncthreads();  //cg better than __syncthreads().
+    cg::sync(cta);
     // do reduction in shared mem
     for (unsigned int s = blockDim.x/2; s >32; s >>=1) {
         if (tid < s) {
             sdata[tid] += sdata[tid + s];
         }
-        // cg::sync(cta);
-        __syncthreads();
+        cg::sync(cta);
     }
     if(tid<32)
         warpReduce(sdata,tid);
@@ -85,21 +79,19 @@ __global__ void reduce2(int* g_idata, int n, int* g_odata) {
 
 // use the warp shuffle instruction to improve the efficiency.
 __global__ void reduce3(int* g_idata, int n, int* g_odata) {
-    // cg::thread_block cta = cg::this_thread_block();
+    cg::thread_block cta = cg::this_thread_block();
     extern __shared__ int sdata[];
     // each thread loads one element from global to shared mem
     unsigned int tid = threadIdx.x;
     unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
     sdata[tid] = i < n ? g_idata[i] : 0;
-    // cg::sync(cta);
-    __syncthreads(); //cg better than __syncthreads().
+    cg::sync(cta);
     // do reduction in shared mem
     for (unsigned int s = blockDim.x/2; s >=32; s >>=1) {
         if (tid < s) {
             sdata[tid] += sdata[tid + s];
         }
-        // cg::sync(cta);
-        __syncthreads();
+        cg::sync(cta);
     }
     //use warp shuffle to reduce the warp size to 32.
     if(tid<32)

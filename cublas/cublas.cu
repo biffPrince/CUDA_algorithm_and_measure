@@ -125,13 +125,10 @@ int main()
         printf("The kernel and cublas results are equal\n");
     }
     curandDestroyGenerator(gen);
-    printf("program reach here %d\n",__LINE__);
     cudaEventDestroy(start);
     cudaEventDestroy(stop);   
     cublasDestroy_v2(cuHandle);
     cudaFree(a);
-    cudaFree(b);
-    cudaFree(d);
     free(h_d);
     free(h_b);
     return 0;
