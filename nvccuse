@@ -1,2 +1,0 @@
-//can not use cmake compile it.
-nvcc -lcublas -lcudart .\cublas_test.cu -o cublas_test -allow-unsupported-compiler -lcurand
