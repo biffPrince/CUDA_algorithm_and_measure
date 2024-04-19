@@ -26,38 +26,38 @@ int main()
     cudaMalloc(&d_A,size*sizeof(float));
     
     //use cuda_runtime measure curand in host API;
-    // cudaEvent_t start,stop;
-    // cudaEventCreate(&start);
-    // cudaEventCreate(&stop);
-    // cudaEventRecord(start); //start record time
+    cudaEvent_t start,stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start); //start record time
     //generate random number
     curandGenerator_t gen;
     curandCreateGenerator(&gen,CURAND_RNG_PSEUDO_DEFAULT);
     curandSetPseudoRandomGeneratorSeed(gen,2233ULL); //set seed
     curandGenerateUniform(gen,d_A,size);
-    // cudaEventRecord(stop); //stop record time
-    // cudaEventSynchronize(stop);
-    // float elapsedTime;
-    // cudaEventElapsedTime(&elapsedTime,start,stop);
-    // printf("Time to generate random number in host API: %3.1f ms\n",elapsedTime);
+    cudaEventRecord(stop); //stop record time
+    cudaEventSynchronize(stop);
+    float elapsedTime;
+    cudaEventElapsedTime(&elapsedTime,start,stop);
+    printf("Time to generate random number in host API: %3.1f ms\n",elapsedTime);
 
     //use cuda_runtime measure curand in device API;
     curandState_t* states;
     cudaMalloc(&states,size*sizeof(curandState_t));
-    // cudaEventRecord(start); //start record time
+    cudaEventRecord(start); //start record time
     init<<<size/256,256>>>(2237,states);
     generate<<<size/256,256>>>(states,d_A);
-    // cudaEventRecord(stop); //stop record time
-    // cudaEventSynchronize(stop);
-    // float elapsedTimeDevice;
-    // cudaEventElapsedTime(&elapsedTimeDevice,start,stop);
-    // printf("Time to generate random number in device API: %3.1f ms\n",elapsedTimeDevice);
+    cudaEventRecord(stop); //stop record time
+    cudaEventSynchronize(stop);
+    float elapsedTimeDevice;
+    cudaEventElapsedTime(&elapsedTimeDevice,start,stop);
+    printf("Time to generate random number in device API: %3.1f ms\n",elapsedTimeDevice);
 
     //free memory
     cudaFree(d_A);
     cudaFree(states);
-    // cudaEventDestroy(start);
-    // cudaEventDestroy(stop);
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
     curandDestroyGenerator(gen);
     return 0;
 }
